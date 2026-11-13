@@ -1,11 +1,13 @@
-// CheckPoint - stage 1
-// Shows a coding task, a simulated AI suggestion, and lets the person
-// accept or reject it. Accepted code is added to "Your file".
+// CheckPoint - stage 2
+// Adds rule-based risk highlights on the suggestion, a short explanation
+// for each flag, and a sensitivity setting (fewer / more flags).
 
 const state = {
   index: 0,
   phase: "generating", // generating -> reviewing
-  decisions: []        // { caseId, decision }
+  sensitivity: "more",
+  openFlagLine: null,
+  decisions: []
 };
 
 const left = document.getElementById("left");
@@ -20,10 +22,14 @@ function currentCase() {
   return CASES[state.index];
 }
 
+function currentFlags() {
+  return detectRisks(currentCase().code, state.sensitivity);
+}
+
 function startCase() {
   state.phase = "generating";
+  state.openFlagLine = null;
   render();
-  // Simulated model latency; an acknowledgement is shown straight away.
   setTimeout(() => {
     state.phase = "reviewing";
     render();
@@ -31,7 +37,7 @@ function startCase() {
 }
 
 function decide(decision) {
-  state.decisions.push({ caseId: currentCase().id, decision });
+  state.decisions.push({ caseId: currentCase().id, decision, flags: currentFlags() });
   state.index += 1;
   if (state.index < CASES.length) {
     startCase();
@@ -41,11 +47,31 @@ function decide(decision) {
   }
 }
 
-function renderCode(c) {
-  return c.code.map((line, i) => `
-    <div class="code-line">
-      <span class="num">${i + 1}</span>
-      <pre>${escapeHtml(line)}</pre>
+function renderCode(c, flags) {
+  return c.code.map((line, i) => {
+    const n = i + 1;
+    const flag = flags.find(f => f.line === n);
+    const cls = flag ? `risk-${flag.level}` : "";
+    const btn = flag
+      ? `<button class="flag-btn" data-line="${n}" title="Why is this flagged?">⚑ why?</button>`
+      : "";
+    return `
+      <div class="code-line ${cls}">
+        <span class="num">${n}</span>
+        <pre>${escapeHtml(line)}</pre>
+        ${btn}
+      </div>`;
+  }).join("");
+}
+
+function renderExplanation(flags) {
+  if (state.openFlagLine === null) return "";
+  const lineFlags = flags.filter(f => f.line === state.openFlagLine);
+  return lineFlags.map(f => `
+    <div class="explain ${f.level}">
+      <span class="tag ${f.level}">${f.level === "high" ? "High risk" : "Check"}</span>
+      Line ${f.line}: ${f.reason}
+      <div class="how">Check: ${f.check}</div>
     </div>`).join("");
 }
 
@@ -57,14 +83,19 @@ function render() {
   if (state.phase === "done") {
     left.innerHTML = `<div class="panel"><h2>Done</h2>
       <p class="muted">You reviewed all ${CASES.length} suggestions.</p></div>`;
-    renderFile();
+    renderSide();
     return;
   }
 
   const c = currentCase();
+  const flags = currentFlags();
   const body = state.phase === "generating"
     ? `<div class="generating">AI assistant is writing a suggestion…</div>`
-    : renderCode(c);
+    : renderCode(c, flags);
+
+  const flagSummary = state.phase !== "reviewing" ? "" : flags.length
+    ? `${flags.length} line${flags.length > 1 ? "s" : ""} flagged for checking.`
+    : "No lines flagged.";
 
   left.innerHTML = `
     <div class="panel">
@@ -73,7 +104,10 @@ function render() {
     </div>
     <div class="panel">
       <h2>AI suggestion</h2>
+      <div class="muted">${flagSummary}</div>
       <div class="code">${body}</div>
+      ${renderExplanation(flags)}
+      <div class="notice">Highlights come from simple checks, not proof. Unflagged lines can still be wrong.</div>
       <div class="actions">
         <button class="primary" id="accept" ${state.phase !== "reviewing" ? "disabled" : ""}>Accept</button>
         <button class="secondary" id="reject" ${state.phase !== "reviewing" ? "disabled" : ""}>Reject</button>
@@ -83,19 +117,38 @@ function render() {
   if (state.phase === "reviewing") {
     document.getElementById("accept").onclick = () => decide("accepted");
     document.getElementById("reject").onclick = () => decide("rejected");
+    left.querySelectorAll(".flag-btn").forEach(b => {
+      b.onclick = () => {
+        const n = Number(b.dataset.line);
+        state.openFlagLine = state.openFlagLine === n ? null : n;
+        render();
+      };
+    });
   }
-  renderFile();
+  renderSide();
 }
 
-function renderFile() {
+function renderSide() {
   const accepted = state.decisions.filter(d => d.decision === "accepted");
   right.innerHTML = `
+    <div class="panel">
+      <h2>Flag sensitivity</h2>
+      <div class="muted">More flags catch more problems but cause more false alarms.</div>
+      <div class="sensitivity">
+        <label><input type="radio" name="sens" value="fewer" ${state.sensitivity === "fewer" ? "checked" : ""}> Fewer flags</label>
+        <label><input type="radio" name="sens" value="more" ${state.sensitivity === "more" ? "checked" : ""}> More flags</label>
+      </div>
+    </div>
     <div class="panel">
       <h2>Your file</h2>
       ${accepted.length === 0
         ? `<div class="muted">Accepted suggestions appear here.</div>`
         : accepted.map(d => `<div class="queue-item">${CASES.find(c => c.id === d.caseId).title}</div>`).join("")}
     </div>`;
+
+  right.querySelectorAll("input[name=sens]").forEach(r => {
+    r.onchange = () => { state.sensitivity = r.value; state.openFlagLine = null; render(); };
+  });
 }
 
 startCase();
