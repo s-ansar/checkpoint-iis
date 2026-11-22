@@ -1,8 +1,10 @@
-// CheckPoint - stage 3
-// Adds: line marking (click a line number to say "I think this is wrong"),
-// a confidence rating that must be set before accepting, and an
-// "Accepted, not yet checked" queue so flags stay visible after acceptance,
-// with "I checked it" and "Undo acceptance" controls. All actions are logged.
+// CheckPoint
+// Stage 1: task + simulated AI suggestion + accept/reject.
+// Stage 2: rule-based risk highlights, short explanations, sensitivity setting.
+// Stage 3: line marking, confidence rating before accepting, and an
+//          "Accepted, not yet checked" queue with "I checked it" / "Undo".
+// Stage 4: results screen (bugs caught, confidence vs correctness) and a
+//          downloadable JSON session log.
 
 const state = {
   index: 0,
@@ -174,9 +176,85 @@ function render() {
   renderSide();
 }
 
+// Outcome of one decision, judged against the planted bugs.
+// A buggy suggestion counts as "caught" if it was rejected/undone or if the
+// person marked at least one real bug line before accepting.
+function outcome(d) {
+  const c = CASES.find(x => x.id === d.caseId);
+  const buggy = c.bugLines.length > 0;
+  const kept = d.decision === "accepted";
+  const markedBug = d.marked.some(n => c.bugLines.includes(n));
+  if (buggy && (!kept || markedBug)) return { label: "Bug caught", good: true };
+  if (buggy && kept) return { label: "Bug missed", good: false };
+  if (!buggy && kept) return { label: "Correct code kept", good: true };
+  return { label: "Correct code rejected", good: false };
+}
+
+function average(values) {
+  const v = values.filter(x => x !== null && x !== undefined);
+  return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null;
+}
+
 function renderDone() {
-  left.innerHTML = `<div class="panel"><h2>Done</h2>
-    <p class="muted">You reviewed all ${CASES.length} suggestions. Check any remaining flags in the queue.</p></div>`;
+  const rows = state.decisions.map(d => {
+    const c = CASES.find(x => x.id === d.caseId);
+    const o = outcome(d);
+    const flagged = d.flags.map(f => f.line);
+    const sysCaught = c.bugLines.filter(n => flagged.includes(n));
+    return `<tr>
+      <td><strong>${c.title}</strong><div class="muted">${c.bugNote}</div></td>
+      <td>${d.decision}</td>
+      <td>${d.confidence === null ? "–" : d.confidence + "%"}</td>
+      <td>${c.bugLines.length ? c.bugLines.join(", ") : "none"}</td>
+      <td>${d.marked.length ? d.marked.join(", ") : "–"}</td>
+      <td>${flagged.length ? flagged.join(", ") : "–"}${c.bugLines.length && sysCaught.length < c.bugLines.length ? ` <span class="tag medium">missed ${c.bugLines.length - sysCaught.length}</span>` : ""}</td>
+      <td><span class="tag ${o.good ? "ok" : "high"}">${o.label}</span></td>
+    </tr>`;
+  }).join("");
+
+  const scored = state.decisions.map(d => ({ d, o: outcome(d) }));
+  const caught = scored.filter(s => s.o.label === "Bug caught").length;
+  const buggyTotal = CASES.filter(c => c.bugLines.length).length;
+  // Calibration: compare confidence on correct code the person kept with
+  // confidence on buggy code they kept without spotting the bug.
+  const confRight = average(scored.filter(s => s.o.label === "Correct code kept").map(s => s.d.confidence));
+  const confWrong = average(scored.filter(s => s.o.label === "Bug missed").map(s => s.d.confidence));
+  const unchecked = state.decisions.filter(d => d.decision === "accepted" && unresolvedFlags(d).length).length;
+
+  left.innerHTML = `
+    <div class="panel">
+      <h2>Results</h2>
+      <div class="summary-grid">
+        <div class="stat"><div class="big">${caught} / ${buggyTotal}</div><div class="label">buggy suggestions caught</div></div>
+        <div class="stat"><div class="big">${confRight ?? "–"}${confRight === null ? "" : "%"}</div><div class="label">confidence when you kept correct code</div></div>
+        <div class="stat"><div class="big">${confWrong ?? "–"}${confWrong === null ? "" : "%"}</div><div class="label">confidence when you kept buggy code without spotting the bug</div></div>
+        <div class="stat"><div class="big">${unchecked}</div><div class="label">accepted suggestions with unchecked flags</div></div>
+      </div>
+      <div class="muted">Well-calibrated trust means high confidence on correct code and low confidence on buggy code.</div>
+    </div>
+    <div class="panel">
+      <h2>Suggestion by suggestion</h2>
+      <table class="results">
+        <tr><th>Task</th><th>Decision</th><th>Confidence</th><th>Real bug lines</th><th>You marked</th><th>System flagged</th><th>Outcome</th></tr>
+        ${rows}
+      </table>
+      <div class="actions">
+        <button class="secondary" id="export">Download session log (JSON)</button>
+        <button class="secondary" id="restart">Start again</button>
+      </div>
+    </div>`;
+
+  document.getElementById("export").onclick = exportLog;
+  document.getElementById("restart").onclick = () => location.reload();
+}
+
+function exportLog() {
+  const data = { exportedAt: new Date().toISOString(), decisions: state.decisions, log: state.log };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "checkpoint-session.json";
+  a.click();
 }
 
 function unresolvedFlags(d) {
