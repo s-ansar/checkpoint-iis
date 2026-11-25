@@ -1,6 +1,6 @@
 # CheckPoint
 
-**README prose word count: ~560** (code and commands not counted)
+**README prose word count: ~590** (code and commands not counted)
 
 CheckPoint is a prototype for reviewing AI code suggestions. It highlights lines that are likely to need checking, keeps those flags visible **after** a suggestion is accepted, and measures whether the person caught the bugs and how well their confidence matched reality.
 
@@ -37,21 +37,21 @@ Known limits: the rules only catch patterns they were written for (the discount 
 ## Running or inspecting the work
 
 ```
-git clone https://github.com/<your-username>/checkpoint-iis.git
+git clone https://github.com/s-ansar/checkpoint-iis.git
 cd checkpoint-iis
 open index.html        # or double-click index.html
 ```
 
-Or use the live page: `https://<your-username>.github.io/checkpoint-iis/` (if GitHub Pages is enabled).
+Or use the live page: `https://s-ansar.github.io/checkpoint-iis/`.
 
 Try this: on task 1 click **⚑ why?**, set your confidence, accept, then open the **Accepted, not yet checked** panel and use **Undo acceptance**. Finish all tasks to see the results screen.
 
 ## Development record
 
-- **Stage 1: baseline** (commit: `<link>`). Task, simulated suggestion with a short "writing…" message, Accept / Reject. This is the plain flow that existing assistants offer, used as the starting point.
-- **Stage 2: risk highlights** (commit: `<link>`). Added rule-based flags with a one-line reason and one concrete check. I chose a short explanation rather than a full report so it can be read at a glance. Added a sensitivity setting because more flags also means more false alarms. Added the note "unflagged lines can still be wrong" so the highlights are not read as proof.
-- **Stage 3: checking after acceptance** (commit: `<link>`). Research shows people often accept first and check later, so flags now move to an "Accepted, not yet checked" queue instead of disappearing. Added *Undo acceptance* so accepting is reversible. Added a confidence rating before Accept and line marking, so the system can measure detection and calibration rather than speed.
-- **Stage 4: results and log** (commit: `<link>`). Added the results screen and JSON export. **Fix:** the first version averaged confidence over all accepted code, including buggy code the person had marked, which made calibration look better than it was. It now compares correct code kept with buggy code kept without spotting the bug.
+- **Stage 1: baseline** (commit: [`130e9af`](https://github.com/s-ansar/checkpoint-iis/commit/130e9afabe07a61f841410d4bb635407d42f9a58)). Task, simulated suggestion with a short "writing…" message, Accept / Reject. This is the plain flow that existing assistants offer, used as the starting point.
+- **Stage 2: risk highlights** (commit: [`875e714`](https://github.com/s-ansar/checkpoint-iis/commit/875e714b086b19619090ae1306de2670bb309f69)). Added rule-based flags with a one-line reason and one concrete check. I chose a short explanation rather than a full report so it can be read at a glance. Added a sensitivity setting because more flags also means more false alarms. Added the note "unflagged lines can still be wrong" so the highlights are not read as proof.
+- **Stage 3: checking after acceptance** (commit: [`c4f530c`](https://github.com/s-ansar/checkpoint-iis/commit/c4f530c229f945e22fa88ed7d903299e6ced5e44)). Research shows people often accept first and check later, so flags now move to an "Accepted, not yet checked" queue instead of disappearing. Added *Undo acceptance* so accepting is reversible. Added a confidence rating before Accept and line marking, so the system can measure detection and calibration rather than speed.
+- **Stage 4: results and log** (commit: [`772c8a7`](https://github.com/s-ansar/checkpoint-iis/commit/772c8a76e05e3c11a53bb4c1c703ea378c01c275)). Added the results screen and JSON export. **Fix:** the first version averaged confidence over all accepted code, including buggy code the person had marked, which made calibration look better than it was. It now compares correct code kept with buggy code kept without spotting the bug.
 
 Checked at each stage by running a full session in the browser (Chrome) and confirming there were no console errors.
 
