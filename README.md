@@ -1,5 +1,7 @@
 # CheckPoint
 
+**README prose word count: ~791** (code and commands not counted)
+
 CheckPoint is a prototype for reviewing AI code suggestions. Instead of letting developers accept generated code and forget about it, it flags lines that likely need a second look, keeps those flags visible after acceptance, and tracks whether the user actually spotted the bugs and how well their confidence lined up with reality.
 
 **Module:** LH/LM Intelligent Interactive Systems, Assignment 2 (builds on the A1 literature review on overreliance on AI coding assistants).
@@ -47,7 +49,7 @@ Built with plain **HTML, CSS, and JavaScript**—no frameworks, no build steps, 
 Clone the repository and open `index.html` locally:
 
 ```bash
-git clone [https://github.com/s-ansar/checkpoint-iis.git](https://github.com/s-ansar/checkpoint-iis.git)
+git clone https://github.com/s-ansar/checkpoint-iis.git
 cd checkpoint-iis
 open index.html        # or double-click index.html in your file manager
 ```
@@ -60,10 +62,10 @@ Or open the live version directly: [s-ansar.github.io/checkpoint-iis](https://s-
 
 ## Development Record
 
-* **Stage 1 — Baseline ([`HASH_1`](https://github.com/s-ansar/checkpoint-iis/commit/HASH_1)):** Started with a basic Accept/Reject flow and a short *"writing…"* delay to mimic how standard AI coding assistants work before adding any review features.
-* **Stage 2 — Risk highlights ([`HASH_2`](https://github.com/s-ansar/checkpoint-iis/commit/HASH_2)):** Added line-level flags with a brief reason and a specific check so they can be scanned quickly without cluttering the screen. I also included a sensitivity toggle for controlling false alarms and added a warning that unflagged lines can still contain bugs.
-* **Stage 3 — Post-acceptance checking ([`HASH_3`](https://github.com/s-ansar/checkpoint-iis/commit/HASH_3)):** Since developers often accept suggestions first and inspect them afterward, I made accepted flags stay visible in an **Accepted, not yet checked** panel instead of disappearing. I also added **Undo acceptance** so choices aren't final, and required a confidence rating before accepting so the prototype measures calibration rather than speed.
-* **Stage 4 — Results & logging ([`HASH_4`](https://github.com/s-ansar/checkpoint-iis/commit/HASH_4)):** Built the final summary screen and JSON log export. While testing, I noticed my first version averaged confidence across all accepted code—even buggy lines the user had already marked—which skewed the score, so I changed it to compare clean accepted code against unspotted bugs.
+* **Stage 1 — Baseline ([`130e9af`](https://github.com/s-ansar/checkpoint-iis/commit/130e9afabe07a61f841410d4bb635407d42f9a58)):** Started with a basic Accept/Reject flow and a short *"writing…"* delay to mimic how standard AI coding assistants work before adding any review features.
+* **Stage 2 — Risk highlights ([`875e714`](https://github.com/s-ansar/checkpoint-iis/commit/875e714b086b19619090ae1306de2670bb309f69)):** Added line-level flags with a brief reason and a specific check so they can be scanned quickly without cluttering the screen. I also included a sensitivity toggle for controlling false alarms and added a warning that unflagged lines can still contain bugs.
+* **Stage 3 — Post-acceptance checking ([`c4f530c`](https://github.com/s-ansar/checkpoint-iis/commit/c4f530c229f945e22fa88ed7d903299e6ced5e44)):** Since developers often accept suggestions first and inspect them afterward, I made accepted flags stay visible in an **Accepted, not yet checked** panel instead of disappearing. I also added **Undo acceptance** so choices aren't final, and required a confidence rating before accepting so the prototype measures calibration rather than speed.
+* **Stage 4 — Results & logging ([`772c8a7`](https://github.com/s-ansar/checkpoint-iis/commit/772c8a76e05e3c11a53bb4c1c703ea378c01c275)):** Built the final summary screen and JSON log export. While testing, I noticed my first version averaged confidence across all accepted code—even buggy lines the user had already marked—which skewed the score, so I changed it to compare clean accepted code against unspotted bugs.
 
 All four stages were built locally first and pushed to GitHub together on 25 Nov 2026. Each commit's author date reflects when I wrote that stage, while the commit date reflects when the repository was uploaded. Each stage was verified in Chrome across a full run with no console errors.
 
