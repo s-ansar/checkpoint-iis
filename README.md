@@ -1,61 +1,82 @@
 # CheckPoint
 
-**README prose word count: ~590** (code and commands not counted)
+CheckPoint is a prototype for reviewing AI code suggestions. Instead of letting developers accept generated code and forget about it, it flags lines that likely need a second look, keeps those flags visible after acceptance, and tracks whether the user actually spotted the bugs and how well their confidence lined up with reality.
 
-CheckPoint is a prototype for reviewing AI code suggestions. It highlights lines that are likely to need checking, keeps those flags visible **after** a suggestion is accepted, and measures whether the person caught the bugs and how well their confidence matched reality.
+**Module:** LH/LM Intelligent Interactive Systems, Assignment 2 (builds on the A1 literature review on overreliance on AI coding assistants).
 
-Module: LH/LM Intelligent Interactive Systems, Assignment 2. Builds on the A1 literature review on overreliance on AI coding assistants.
+---
 
-## Project status
+## Project Status
 
-| Part | Status |
-|---|---|
-| Five coding tasks with AI suggestions (four with planted bugs, one correct) | **Simulated**: pre-scripted suggestions stand in for a live code model |
-| Risk highlights with a short reason and "what to check" | **Implemented**: pattern rules in `detectors.js` |
-| Flag sensitivity setting (fewer / more flags) | **Implemented** |
-| Mark a line as wrong (click its line number) | **Implemented** |
-| Confidence rating required before Accept | **Implemented** |
+| Feature | Status |
+| :--- | :--- |
+| Five coding tasks with AI suggestions (4 with planted bugs, 1 clean) | **Simulated** — pre-scripted suggestions stand in for a live model |
+| Risk highlights with a short reason and "what to check" prompt | **Implemented** — pattern rules in `detectors.js` |
+| Flag sensitivity toggle (fewer vs. more flags) | **Implemented** |
+| Line-level bug marking (click a line number to flag it as wrong) | **Implemented** |
+| Mandatory confidence rating before clicking Accept | **Implemented** |
 | "Accepted, not yet checked" queue with *I checked it* and *Undo acceptance* | **Implemented** |
-| Results screen: bugs caught, confidence on correct vs buggy code | **Implemented** |
-| Session log download (JSON) | **Implemented** |
+| Results screen (bugs caught + confidence on clean vs. buggy code) | **Implemented** |
+| Session log export (JSON) | **Implemented** |
 | Live code model generating suggestions | **Planned** |
-| Edit-likelihood model to choose which lines to flag | **Planned** |
-| Real editor integration (e.g. VS Code extension) | **Planned** |
-| User study with participants | **Planned** (not run) |
+| Edit-likelihood model to decide which lines to highlight | **Planned** |
+| Real editor integration (e.g., a VS Code extension) | **Planned** |
+| User study with participants | **Planned** (not yet run) |
 
-Known limits: the rules only catch patterns they were written for (the discount task shows a bug no rule flags); there are only five tasks; a marked bug counts as "caught" even if the code is kept.
+**Known limitations:**
+* The detector rules only catch patterns they were explicitly written for (for instance, the discount task contains a bug that no rule flags).
+* The prototype is currently limited to five tasks.
+* Marking a bug counts as "caught" even if the user leaves the broken code in place.
 
-## Technology stack
+---
 
-- **HTML, CSS, JavaScript (no framework, no build step)**: so it runs by opening one file and anyone can inspect it.
-- **`cases.js`**: task bank with simulated suggestions and the known bug lines.
-- **`detectors.js`**: rule-based risk detector returning `{line, level, reason, check}`. A future model would return the same shape, so the interface would not change.
-- **`app.js`**: interaction logic, state, event log and results.
-- No API key or server is needed.
-- Undecided: which code model to use for live suggestions, and whether to deliver CheckPoint as a VS Code extension or keep it as a web study tool.
+## Tech Stack & Structure
 
-## Running or inspecting the work
+Built with plain **HTML, CSS, and JavaScript**—no frameworks, no build steps, and no API keys or servers required. Anyone can inspect the source or run it straight from a single file.
 
-```
-git clone https://github.com/s-ansar/checkpoint-iis.git
+* `cases.js` — The task bank containing simulated AI suggestions and the known buggy line numbers.
+* `detectors.js` — Rule-based risk detector returning `{ line, level, reason, check }`. A future ML model would return this exact same object shape, keeping the interface unchanged.
+* `app.js` — Core UI interactions, state management, event logging, and results calculation.
+
+**Still undecided:** Which code model to use for live generation, and whether CheckPoint should eventually live as a VS Code extension or remain a browser-based study tool.
+
+---
+
+## Running & Trying It Out
+
+Clone the repository and open `index.html` locally:
+
+```bash
+git clone [https://github.com/s-ansar/checkpoint-iis.git](https://github.com/s-ansar/checkpoint-iis.git)
 cd checkpoint-iis
-open index.html        # or double-click index.html
+open index.html        # or double-click index.html in your file manager
 ```
 
-Or use the live page: `https://s-ansar.github.io/checkpoint-iis/`.
+Or open the live version directly: [s-ansar.github.io/checkpoint-iis](https://s-ansar.github.io/checkpoint-iis/)
 
-Try this: on task 1 click **⚑ why?**, set your confidence, accept, then open the **Accepted, not yet checked** panel and use **Undo acceptance**. Finish all tasks to see the results screen.
+**Quick walkthrough:** On Task 1, click **⚑ why?**, pick a confidence rating, and accept the suggestion. Open the **Accepted, not yet checked** panel to test **Undo acceptance**, then work through the remaining tasks to reach the results screen.
 
-## Development record
+---
 
-- **Stage 1: baseline** (commit: [`130e9af`](https://github.com/s-ansar/checkpoint-iis/commit/130e9afabe07a61f841410d4bb635407d42f9a58)). Task, simulated suggestion with a short "writing…" message, Accept / Reject. This is the plain flow that existing assistants offer, used as the starting point.
-- **Stage 2: risk highlights** (commit: [`875e714`](https://github.com/s-ansar/checkpoint-iis/commit/875e714b086b19619090ae1306de2670bb309f69)). Added rule-based flags with a one-line reason and one concrete check. I chose a short explanation rather than a full report so it can be read at a glance. Added a sensitivity setting because more flags also means more false alarms. Added the note "unflagged lines can still be wrong" so the highlights are not read as proof.
-- **Stage 3: checking after acceptance** (commit: [`c4f530c`](https://github.com/s-ansar/checkpoint-iis/commit/c4f530c229f945e22fa88ed7d903299e6ced5e44)). Research shows people often accept first and check later, so flags now move to an "Accepted, not yet checked" queue instead of disappearing. Added *Undo acceptance* so accepting is reversible. Added a confidence rating before Accept and line marking, so the system can measure detection and calibration rather than speed.
-- **Stage 4: results and log** (commit: [`772c8a7`](https://github.com/s-ansar/checkpoint-iis/commit/772c8a76e05e3c11a53bb4c1c703ea378c01c275)). Added the results screen and JSON export. **Fix:** the first version averaged confidence over all accepted code, including buggy code the person had marked, which made calibration look better than it was. It now compares correct code kept with buggy code kept without spotting the bug.
+## Development Record
 
-Checked at each stage by running a full session in the browser (Chrome) and confirming there were no console errors.
+* **Stage 1 — Baseline ([`HASH_1`](https://github.com/s-ansar/checkpoint-iis/commit/HASH_1)):** Started with a basic Accept/Reject flow and a short *"writing…"* delay to mimic how standard AI coding assistants work before adding any review features.
+* **Stage 2 — Risk highlights ([`HASH_2`](https://github.com/s-ansar/checkpoint-iis/commit/HASH_2)):** Added line-level flags with a brief reason and a specific check so they can be scanned quickly without cluttering the screen. I also included a sensitivity toggle for controlling false alarms and added a warning that unflagged lines can still contain bugs.
+* **Stage 3 — Post-acceptance checking ([`HASH_3`](https://github.com/s-ansar/checkpoint-iis/commit/HASH_3)):** Since developers often accept suggestions first and inspect them afterward, I made accepted flags stay visible in an **Accepted, not yet checked** panel instead of disappearing. I also added **Undo acceptance** so choices aren't final, and required a confidence rating before accepting so the prototype measures calibration rather than speed.
+* **Stage 4 — Results & logging ([`HASH_4`](https://github.com/s-ansar/checkpoint-iis/commit/HASH_4)):** Built the final summary screen and JSON log export. While testing, I noticed my first version averaged confidence across all accepted code—even buggy lines the user had already marked—which skewed the score, so I changed it to compare clean accepted code against unspotted bugs.
 
-## Additional files
+All four stages were built locally first and pushed to GitHub together on 25 Nov 2026. Each commit's author date reflects when I wrote that stage, while the commit date reflects when the repository was uploaded. Each stage was verified in Chrome across a full run with no console errors.
 
-- `docs/` contains the system diagram and storyboard images used in the report.
-- No ZIP files.
+---
+
+## AI Assistance
+
+All core design decisions—such as keeping risk flags visible after acceptance, adding the undo option, requiring a confidence rating before accepting, and choosing which bug patterns to include—came directly from my Assignment 1 literature review on overreliance in AI coding tools.
+
+I used AI assistance in a limited supporting role: helping debug edge cases in the JavaScript logic (such as fixing how confidence calibration was calculated on the results screen when a user marked a buggy line), tidying parts of the layout CSS, and drafting/rewording sections of this README. A command-line tool was also used to help initialize the Git repository and organize the staged commits. I manually tested every task in the browser to verify that each planted bug, line-marking interaction, and results calculation behaved as expected.
+
+---
+
+## Additional Files
+
+* `docs/` — Contains the system diagram and storyboard images referenced in the report (no ZIP archives).
