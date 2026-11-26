@@ -1,8 +1,5 @@
-// Risk detector: IMPLEMENTED as simple pattern rules.
-// Each rule marks lines that are likely to need a human check and gives a
-// short reason plus one concrete thing to check (kept short on purpose).
-// PLANNED: replace or extend with a model that predicts which lines people
-// are likely to edit, returning the same {line, level, reason, check} shape.
+// Risk detector - simple pattern rules for now.
+// A model could replace this later if it returns the same {line, level, reason, check}.
 
 const RULES = [
   {
@@ -49,7 +46,7 @@ const RULES = [
   }
 ];
 
-// sensitivity: "fewer" shows high-risk flags only, "more" also shows medium.
+// "fewer" = high risk only, "more" = high + medium
 function detectRisks(codeLines, sensitivity) {
   const flags = [];
   codeLines.forEach((text, i) => {

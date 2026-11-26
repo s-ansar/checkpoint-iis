@@ -1,20 +1,14 @@
-// CheckPoint
-// Stage 1: task + simulated AI suggestion + accept/reject.
-// Stage 2: rule-based risk highlights, short explanations, sensitivity setting.
-// Stage 3: line marking, confidence rating before accepting, and an
-//          "Accepted, not yet checked" queue with "I checked it" / "Undo".
-// Stage 4: results screen (bugs caught, confidence vs correctness) and a
-//          downloadable JSON session log.
+// CheckPoint - main app: state, rendering and results
 
 const state = {
   index: 0,
-  phase: "generating", // generating -> reviewing -> (next case) ... -> done
+  phase: "generating", // generating / reviewing / done
   sensitivity: "more",
   openFlagLine: null,
-  marked: new Set(),   // line numbers the person marked as suspicious
-  confidence: null,    // 0-100, null until the person moves the slider
-  decisions: [],       // one entry per case
-  log: []              // timestamped events
+  marked: new Set(),   // lines the user thinks are wrong
+  confidence: null,    // stays null until the slider is moved
+  decisions: [],
+  log: []
 };
 
 const left = document.getElementById("left");
@@ -43,6 +37,7 @@ function startCase() {
   state.marked = new Set();
   state.confidence = null;
   render();
+  // short fake "AI is writing" delay
   setTimeout(() => {
     state.phase = "reviewing";
     logEvent("shown", { caseId: currentCase().id, flags: currentFlags().map(f => f.line) });
@@ -55,11 +50,11 @@ function decide(decision) {
   const flags = currentFlags();
   state.decisions.push({
     caseId: c.id,
-    decision,                         // accepted | rejected | undone
+    decision, // accepted, rejected or undone
     confidence: state.confidence,
     marked: [...state.marked].sort((a, b) => a - b),
     flags,
-    checked: [],                      // flag lines confirmed after acceptance
+    checked: [], // flags ticked off after accepting
     sensitivity: state.sensitivity
   });
   logEvent(decision, { caseId: c.id, confidence: state.confidence, marked: [...state.marked] });
@@ -176,9 +171,7 @@ function render() {
   renderSide();
 }
 
-// Outcome of one decision, judged against the planted bugs.
-// A buggy suggestion counts as "caught" if it was rejected/undone or if the
-// person marked at least one real bug line before accepting.
+// caught = rejected/undone, or a real bug line was marked
 function outcome(d) {
   const c = CASES.find(x => x.id === d.caseId);
   const buggy = c.bugLines.length > 0;
@@ -200,14 +193,15 @@ function renderDone() {
     const c = CASES.find(x => x.id === d.caseId);
     const o = outcome(d);
     const flagged = d.flags.map(f => f.line);
-    const sysCaught = c.bugLines.filter(n => flagged.includes(n));
+    const missedByRules = c.bugLines.filter(n => !flagged.includes(n)).length;
+    const missedTag = missedByRules ? ` <span class="tag medium">missed ${missedByRules}</span>` : "";
     return `<tr>
       <td><strong>${c.title}</strong><div class="muted">${c.bugNote}</div></td>
       <td>${d.decision}</td>
       <td>${d.confidence === null ? "–" : d.confidence + "%"}</td>
       <td>${c.bugLines.length ? c.bugLines.join(", ") : "none"}</td>
       <td>${d.marked.length ? d.marked.join(", ") : "–"}</td>
-      <td>${flagged.length ? flagged.join(", ") : "–"}${c.bugLines.length && sysCaught.length < c.bugLines.length ? ` <span class="tag medium">missed ${c.bugLines.length - sysCaught.length}</span>` : ""}</td>
+      <td>${flagged.length ? flagged.join(", ") : "–"}${missedTag}</td>
       <td><span class="tag ${o.good ? "ok" : "high"}">${o.label}</span></td>
     </tr>`;
   }).join("");
@@ -215,8 +209,7 @@ function renderDone() {
   const scored = state.decisions.map(d => ({ d, o: outcome(d) }));
   const caught = scored.filter(s => s.o.label === "Bug caught").length;
   const buggyTotal = CASES.filter(c => c.bugLines.length).length;
-  // Calibration: compare confidence on correct code the person kept with
-  // confidence on buggy code they kept without spotting the bug.
+  // calibration: correct code kept vs buggy code kept without spotting it
   const confRight = average(scored.filter(s => s.o.label === "Correct code kept").map(s => s.d.confidence));
   const confWrong = average(scored.filter(s => s.o.label === "Bug missed").map(s => s.d.confidence));
   const unchecked = state.decisions.filter(d => d.decision === "accepted" && unresolvedFlags(d).length).length;

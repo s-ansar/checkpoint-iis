@@ -1,7 +1,5 @@
-// Task bank: each case is a coding task with a pre-scripted "AI suggestion".
-// SIMULATED: these suggestions stand in for a live code model, so every
-// participant sees the same code and the planted bugs are known in advance.
-// bugLines lists the 1-based line numbers that contain a real defect.
+// Tasks with pre-scripted "AI" suggestions (simulated, so everyone sees the same bugs).
+// bugLines = line numbers (from 1) with a real bug.
 
 const CASES = [
   {
