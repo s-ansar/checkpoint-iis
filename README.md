@@ -1,6 +1,6 @@
 # CheckPoint
 
-**README prose word count: ~812** (code and commands not counted)
+**README prose word count: ~817** (code and commands not counted)
 
 CheckPoint is a prototype for reviewing AI code suggestions. Instead of letting developers accept generated code and forget about it, it flags lines that likely need a second look, keeps those flags visible after acceptance, and tracks whether the user actually spotted the bugs and how well their confidence lined up with reality.
 
@@ -75,10 +75,12 @@ All four stages were built locally first and pushed to GitHub together on 25 Nov
 
 All core design decisions—such as keeping risk flags visible after acceptance, adding the undo option, requiring a confidence rating before accepting, and choosing which bug patterns to include—came directly from my Assignment 1 literature review on overreliance in AI coding tools.
 
-I used AI assistance in a limited supporting role: helping debug edge cases in the JavaScript logic (such as fixing how confidence calibration was calculated on the results screen when a user marked a buggy line), tidying parts of the layout CSS, and drafting/rewording sections of this README. AI was also used to create the system diagram sketches and storyboards in `docs/`, and to help develop the project report. A command-line tool was also used to help initialize the Git repository and organize the staged commits. I manually tested every task in the browser to verify that each planted bug, line-marking interaction, and results calculation behaved as expected.
+I used AI assistance in a limited supporting role: helping debug edge cases in the JavaScript logic (such as fixing how confidence calibration was calculated on the results screen when a user marked a buggy line), tidying parts of the layout CSS, and drafting/rewording sections of this README. AI also helped me produce the system diagram and capture the storyboard screenshots in `docs/`, and helped develop the project report. A command-line tool was also used to help initialize the Git repository and organize the staged commits. I manually tested every task in the browser to verify that each planted bug, line-marking interaction, and results calculation behaved as expected.
 
 ---
 
 ## Additional Files
 
-* `docs/` — Contains the system diagram and storyboard images referenced in the report (no ZIP archives).
+* `docs/system-diagram.png` — Figure 1 in the report (source: `docs/diagram-source.html`).
+* `docs/storyboard-frames/` — screenshots of the prototype used in Storyboards 1–3.
+* No ZIP archives.
